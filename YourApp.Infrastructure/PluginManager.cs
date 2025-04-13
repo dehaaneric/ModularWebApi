@@ -20,50 +20,66 @@ namespace YourApp.Infrastructure
         {
             _logger.LogInformation("Discovering plugins in: {Path}", pluginsPath);
 
-            // Ensure plugins directory exists
             if (!Directory.Exists(pluginsPath))
             {
                 _logger.LogWarning("Plugins directory not found: {Path}", pluginsPath);
                 return;
             }
 
-            // Load plugin assemblies
-            foreach (var dllPath in Directory.GetFiles(pluginsPath, "*.dll"))
+            foreach (var dllPath in Directory.EnumerateFiles(pluginsPath, "*.dll"))
             {
-                if (!IsValidModule(dllPath))
-                {
-                    continue;
-                }
+                if (!IsValidModule(dllPath)) continue;
 
+                LoadPluginsFromAssembly(dllPath);
+            }
+        }
+
+        private void LoadPluginsFromAssembly(string dllPath)
+        {
+            try
+            {
+                var assembly = Assembly.LoadFrom(dllPath);
+                var pluginTypes = assembly.GetTypes()
+                    .Where(t => !t.IsAbstract && typeof(IPlugin).IsAssignableFrom(t));
+
+                foreach (var plugin in InstantiatePlugins(pluginTypes))
+                {
+                    _plugins.Add(plugin);
+                    _logger.LogInformation("Loaded plugin: {PluginName} - {PluginDescription}",
+                        plugin.Name, plugin.Description);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to load plugin from {DllPath}", dllPath);
+            }
+        }
+
+        private IEnumerable<IPlugin> InstantiatePlugins(IEnumerable<Type> pluginTypes)
+        {
+            foreach (var pluginType in pluginTypes)
+            {
+                IPlugin? plugin = null;
                 try
                 {
-                    var assembly = Assembly.LoadFrom(dllPath);
-                    var pluginTypes = assembly.GetTypes()
-                        .Where(t => !t.IsAbstract && typeof(IPlugin).IsAssignableFrom(t));
-
-                    foreach (var pluginType in pluginTypes)
-                    {
-                        if (Activator.CreateInstance(pluginType) is IPlugin plugin)
-                        {
-                            _plugins.Add(plugin);
-                            _logger.LogInformation("Loaded plugin: {PluginName} - {PluginDescription}",
-                                plugin.Name, plugin.Description);
-                        }
-                    }
+                    plugin = Activator.CreateInstance(pluginType) as IPlugin;
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to load plugin from {DllPath}", dllPath);
+                    _logger.LogError(ex, "Failed to instantiate plugin of type {PluginType}", pluginType.FullName);
+                }
+
+                if (plugin != null)
+                {
+                    yield return plugin;
                 }
             }
         }
 
         private bool IsValidModule(string dllPath)
         {
-            var fi = new FileInfo(dllPath);
-
-            bool v = fi.Name.StartsWith("ModularWebApi.Plugin", StringComparison.OrdinalIgnoreCase);
-            return v;
+            return Path.GetFileName(dllPath)
+                ?.StartsWith("ModularWebApi.Plugin", StringComparison.OrdinalIgnoreCase) ?? false;
         }
     }
 }
