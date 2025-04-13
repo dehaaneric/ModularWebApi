@@ -30,6 +30,11 @@ namespace YourApp.Infrastructure
             // Load plugin assemblies
             foreach (var dllPath in Directory.GetFiles(pluginsPath, "*.dll"))
             {
+                if (!IsValidModule(dllPath))
+                {
+                    continue;
+                }
+
                 try
                 {
                     var assembly = Assembly.LoadFrom(dllPath);
@@ -51,6 +56,14 @@ namespace YourApp.Infrastructure
                     _logger.LogError(ex, "Failed to load plugin from {DllPath}", dllPath);
                 }
             }
+        }
+
+        private bool IsValidModule(string dllPath)
+        {
+            var fi = new FileInfo(dllPath);
+
+            bool v = fi.Name.StartsWith("ModularWebApi.Plugin", StringComparison.OrdinalIgnoreCase);
+            return v;
         }
     }
 }

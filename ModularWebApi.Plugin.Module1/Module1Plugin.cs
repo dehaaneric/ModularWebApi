@@ -4,8 +4,6 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ModularWebApi.Core;
-using System.Collections.Generic;
-using System.Reflection.Emit;
 
 namespace ModularWebApi.Plugin.Module1
 {
@@ -28,20 +26,20 @@ namespace ModularWebApi.Plugin.Module1
         public override void ConfigureEndpoints(IEndpointRouteBuilder endpoints)
         {
             // Register module-specific endpoints
-            var group = endpoints.MapGroup("/api/module1").WithTags("Module1");
+            var group = endpoints.MapGroup("/api/weather").WithTags("WeatherForecast");
 
-            //group.MapGet("/items", GetAllItemsAsync);
+            group.MapGet("/", GetAllItemsAsync);
             //group.MapGet("/items/{id}", GetItemByIdAsync);
             //group.MapPost("/items", CreateItemAsync);
             // Add other endpoints...
         }
 
         // API endpoint handlers
-        //private async Task<IResult> GetAllItemsAsync(IModule1Service service)
-        //{
-        //    var items = await service.GetItemsAsync();
-        //    return Results.Ok(items);
-        //}
+        private IResult GetAllItemsAsync(IModule1Service service)
+        {
+            var items = service.GetWeatherForecast();
+            return Results.Ok(items);
+        }
 
         //private async Task<IResult> GetItemByIdAsync(int id, IModule1Service service)
         //{

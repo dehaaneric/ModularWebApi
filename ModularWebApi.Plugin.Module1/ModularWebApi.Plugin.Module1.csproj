@@ -5,7 +5,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-
+  <PropertyGroup>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <OutDir>$(SolutionDir)PluginSource</OutDir>
+  </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\ModularWebApi.Core\ModularWebApi.Core.csproj" />
   </ItemGroup>
