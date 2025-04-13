@@ -1,8 +1,24 @@
+using YourApp.Infrastructure;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+
+// Configure plugin manager
+var pluginManager = new PluginManager(
+    builder.Services.BuildServiceProvider().GetRequiredService<ILogger<PluginManager>>());
+
+// Discover plugins
+var pluginsPath = Path.Combine(AppContext.BaseDirectory, "plugins");
+pluginManager.DiscoverPlugins(pluginsPath);
+
+// Configure plugin services
+foreach (var plugin in pluginManager.Plugins)
+{
+    plugin.ConfigureServices(builder.Services, builder.Configuration);
+}
 
 var app = builder.Build();
 
@@ -13,6 +29,15 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Configure plugin endpoints
+app.UseEndpoints(endpoints =>
+{
+    foreach (var plugin in pluginManager.Plugins)
+    {
+        plugin.ConfigureEndpoints(endpoints);
+    }
+});
 
 var summaries = new[]
 {

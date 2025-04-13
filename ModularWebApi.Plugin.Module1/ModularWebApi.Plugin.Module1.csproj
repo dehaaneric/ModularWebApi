@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ModularWebApi.Core\ModularWebApi.Core.csproj" />
+  </ItemGroup>
+
 </Project>
